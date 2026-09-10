@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
