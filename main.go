@@ -8,6 +8,15 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 )
 
+// PreTrace runs in the Pre lane, before the router matches a route,
+// so it fires even on requests that end up as a 404.
+func PreTrace(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c *echo.Context) error {
+		c.Response().Header().Set("X-Pre-Seen", "1")
+		return next(c)
+	}
+}
+
 func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		c.Response().Header().Set(echo.HeaderServer, "New-Echo-Server")
@@ -47,6 +56,8 @@ func EnforceInside(next echo.HandlerFunc) echo.HandlerFunc {
 func main() {
 	e := echo.New()
 	e.IPExtractor = echo.ExtractIPDirect()
+
+	e.Pre(PreTrace)
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
