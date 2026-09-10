@@ -32,6 +32,18 @@ func InsideTheBuilding(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+// EnforceInside blocks any request in the group unless InsideTheBuilding
+// already labeled it inside==true. Register AFTER InsideTheBuilding.
+func EnforceInside(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c *echo.Context) error {
+		inside, _ := c.Get("inside").(bool)
+		if !inside {
+			return echo.NewHTTPError(http.StatusForbidden, "outside the building")
+		}
+		return next(c)
+	}
+}
+
 func main() {
 	e := echo.New()
 	e.IPExtractor = echo.ExtractIPDirect()
@@ -53,6 +65,11 @@ func main() {
 			"inside": inside,
 			"via":    via,
 		})
+	})
+
+	internal := e.Group("/internal", EnforceInside)
+	internal.GET("/admin", func(c *echo.Context) error {
+		return c.String(http.StatusOK, "welcome, you are inside")
 	})
 
 	if err := e.Start(":1323"); err != nil {
